@@ -61,14 +61,16 @@ export default {
     },
     resultList() {
       const list = [];
+      const excludedNumbers = [1, 10];
       for (const key in this.result) {
         if (this.result.hasOwnProperty(key)) {
           const element = this.result[key];
           let name = conversionCategoryName(key);
+          const filteredResult = element.filter(item => !excludedNumbers.includes(item));
           list.push({
             label: key,
             name,
-            value: element
+            value: filteredResult
           });
         }
       }

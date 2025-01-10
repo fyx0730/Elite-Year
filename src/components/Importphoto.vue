@@ -7,11 +7,11 @@
     class="c-Importphoto"
   >
     <el-row>
-      <label for="idinput">抽奖号码</label>
+      <label for="idinput">抽奖姓名</label>
       <el-input
         id="idinput"
         size="mini"
-        type="number"
+        type="text"
         v-model="id"
         :min="0"
         :max="config.number"
@@ -94,7 +94,7 @@ export default {
     },
     async saveHandler() {
       const { id, value } = this;
-      const ID = Number(id);
+      const ID = parseFloat(id);
       if (!ID || ID <= 0) {
         return this.$message.error('号码必须大于0的整数');
       }

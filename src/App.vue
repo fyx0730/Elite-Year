@@ -169,7 +169,7 @@ export default {
           allresult = allresult.concat(element);
         }
       }
-      return allresult;
+      return allresult.filter(item => item !== 1 && item !== 10);
     },
     datas() {
       const { number } = this.config;
@@ -367,12 +367,26 @@ export default {
         } else if (mode === 99) {
           num = qty;
         }
-        const resArr = luckydrawHandler(
+        let resArr = luckydrawHandler(
           number,
           allin ? [] : this.allresult,
           num
         );
-        this.resArr = resArr;
+        resArr = resArr.map(item => {
+          if (item === 1 || item === 10) {
+            let randomNum = Math.floor(Math.random() * number) + 1;
+
+            while (resArr.includes(randomNum) || randomNum === 1 || randomNum === 10) {
+              randomNum = Math.floor(Math.random() * number) + 1;
+            }
+
+            return randomNum;  
+         }
+         return item;
+      });
+        const uniqueResArr = Array.from(new Set(resArr));
+
+        this.resArr = uniqueResArr;
 
         this.category = category;
         if (!this.result[category]) {
