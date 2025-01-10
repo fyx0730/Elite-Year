@@ -215,7 +215,10 @@ export default {
   },
   methods: {
     handleIframeMessage(event) {
-    if (event.origin !== "https://snap.codelab.club") {
+    const allowedOrigins = [
+    "https://snap.codelab.club",
+    "https://snap.aimaker.space"];  
+    if (!allowedOrigins.includes(event.origin)) {
       return;
     }
     if (event.data === "open") {
