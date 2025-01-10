@@ -71,7 +71,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">立即抽奖</el-button>
+          <el-button type="primary" @click="onSubmit">确定</el-button>
           <el-button @click="showSetwat = false">取消</el-button>
         </el-form-item>
       </el-form>
@@ -142,10 +142,17 @@ import {
 import Importphoto from './Importphoto';
 import { database, DB_STORE_NAME } from '@/helper/db';
 
-export default {
+
+export default { 
   props: {
     running: Boolean,
     closeRes: Function
+  },
+  mounted() {
+    window.addEventListener('message', this.handleIframeMessage);
+  },
+  beforeDestroy() {
+    window.removeEventListener('message', this.handleIframeMessage);
   },
   computed: {
     config: {
@@ -207,6 +214,26 @@ export default {
     }
   },
   methods: {
+    handleIframeMessage(event) {
+    if (event.origin !== "https://snap.codelab.club") {
+      return;
+    }
+    if (event.data === "open") {
+      this.showSetwat = true;
+    } else if (event.data === "close") {
+      this.showSetwat = false;
+    }
+      else if (event.data === "startLottery") {
+      this.running = true;  
+      this.$emit(
+      'toggle',Object.assign({}, this.form, { remain: this.remain })
+      );
+    }
+      else if (event.data === "stopLottery") {
+        this.running = false;
+        this.$emit('toggle')
+    }
+    },
     resetConfig() {
       const type = this.removeInfo.type;
       this.$confirm('此操作将重置所选数据，是否继续?', '提示', {
@@ -281,10 +308,6 @@ export default {
         }
       }
       this.showSetwat = false;
-      this.$emit(
-        'toggle',
-        Object.assign({}, this.form, { remain: this.remain })
-      );
     },
     startHandler() {
       this.$emit('toggle');
@@ -346,7 +369,7 @@ export default {
 }
 .setwat-dialog {
   .colorred {
-    color: red;
+    color: rgb(255, 164, 164);
     font-weight: bold;
   }
 }

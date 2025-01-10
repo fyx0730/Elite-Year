@@ -93,7 +93,7 @@
     <Result :visible.sync="showResult"></Result>
 
     <span class="copy-right">
-      Copyright©zhangyongfeng5350@gmail.com
+      英荔 AI 不止编程
     </span>
 
     <audio
@@ -250,9 +250,11 @@ export default {
       this.getPhoto();
     }, 1000);
     window.addEventListener('resize', this.reportWindowSize);
+    window.addEventListener("message", this.handleIframeMessage);
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.reportWindowSize);
+    window.removeEventListener("message", this.handleIframeMessage);
   },
   methods: {
     reportWindowSize() {
@@ -264,9 +266,24 @@ export default {
     },
     playHandler() {
       this.audioPlaying = true;
+      this.$el.querySelector("#audiobg").play();
     },
     pauseHandler() {
       this.audioPlaying = false;
+      this.$el.querySelector("#audiobg").pause();
+    },
+    handleIframeMessage(event) {
+    if (event.origin !== "https://snap.codelab.club") {
+      return;
+    }
+    if (event.data === "play") {
+      this.playHandler();
+    } else if (event.data === "pause") {
+      this.pauseHandler();
+    }
+      else if (event.data === "closeShowRes") {
+      this.closeRes();
+    }
     },
     playAudio(type) {
       if (type) {
@@ -421,7 +438,7 @@ export default {
     right: 0;
     bottom: 0;
     color: #ccc;
-    font-size: 12px;
+    font-size: 20px;
   }
   .bounce-enter-active {
     animation: bounce-in 1.5s;
@@ -442,7 +459,7 @@ export default {
   transform: translateX(-50%) translateY(-50%);
   text-align: center;
   p {
-    color: red;
+    color: rgb(255, 164, 164);
     font-size: 50px;
     line-height: 120px;
   }
