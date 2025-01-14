@@ -167,9 +167,10 @@ export default {
         if (this.result.hasOwnProperty(key)) {
           const element = this.result[key];
           allresult = allresult.concat(element);
-        }
+       }
       }
-      return allresult.filter(item => item !== 1 && item !== 10);
+      // 使用 Set 去重
+      return Array.from(new Set(allresult));
     },
     datas() {
       const { number } = this.config;
@@ -372,11 +373,12 @@ export default {
           allin ? [] : this.allresult,
           num
         );
+        const currentAndHistoricalResults = [...this.allresult, ...resArr];
         resArr = resArr.map(item => {
           if (item === 1 || item === 10) {
             let randomNum = Math.floor(Math.random() * number) + 1;
 
-            while (resArr.includes(randomNum) || randomNum === 1 || randomNum === 10) {
+            while (currentAndHistoricalResults.includes(randomNum) || randomNum === 1 || randomNum === 10) {
               randomNum = Math.floor(Math.random() * number) + 1;
             }
 
@@ -384,6 +386,7 @@ export default {
          }
          return item;
       });
+        this.allresult = [...this.allresult, ...resArr];
         const uniqueResArr = Array.from(new Set(resArr));
 
         this.resArr = uniqueResArr;
