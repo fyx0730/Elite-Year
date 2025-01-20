@@ -310,12 +310,14 @@ export default {
           return this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
         }
       }
+      window.parent.postMessage("saved", "*")
       this.showSetwat = false;
     },
     startHandler() {
       this.$emit('toggle');
       if (!this.running) {
         this.showSetwat = true;
+        window.parent.postMessage("unsaved", "*")
       }
     },
     transformList() {
