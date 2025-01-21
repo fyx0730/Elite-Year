@@ -26,46 +26,50 @@
       </ul>
     </div>
     <transition name="bounce">
-      <div id="resbox" v-show="showRes">
-        <p @click="showRes = false">{{ categoryName }}抽奖结果：</p>
-        <div class="container">
+  <div id="resbox" v-show="showRes">
+    <p @click="showRes = false">{{ categoryName }}抽奖结果：</p>
+    <div class="container">
+      <span
+        v-for="item in resArr"
+        :key="item"
+        class="itemres"
+        :style="resCardStyle"
+        :data-id="item"
+        @click="showRes = false"
+      >
+        <!-- 如果有照片 -->
+        <div class="cont" v-if="photos.find((d) => d.id === item)">
+          <img
+            :src="photos.find((d) => d.id === item).value"
+            alt="photo"
+            :width="160"
+            :height="160"
+          />
+          <span>{{ item }}</span> <!-- 显示编号 -->
+          <span v-if="list.find((d) => d.key === item)">
+            {{ list.find((d) => d.key === item).name }}
+          </span> <!-- 显示姓名 -->
+        </div>
+
+        <!-- 如果没有照片 -->
+        <span class="cont" v-else>
           <span
-            v-for="item in resArr"
-            :key="item"
-            class="itemres"
-            :style="resCardStyle"
-            :data-id="item"
-            @click="showRes = false"
-            :class="{
-              numberOver:
-                !!photos.find((d) => d.id === item) ||
-                !!list.find((d) => d.key === item),
+            v-if="!!list.find((d) => d.key === item)"
+            :style="{
+              fontSize: '40px',
             }"
           >
-            <span class="cont" v-if="!photos.find((d) => d.id === item)">
-              <span
-                v-if="!!list.find((d) => d.key === item)"
-                :style="{
-                  fontSize: '40px',
-                }"
-              >
-                {{ list.find((d) => d.key === item).name }}
-              </span>
-              <span v-else>
-                {{ item }}
-              </span>
-            </span>
-            <img
-              v-if="photos.find((d) => d.id === item)"
-              :src="photos.find((d) => d.id === item).value"
-              alt="photo"
-              :width="160"
-              :height="160"
-            />
+            {{ list.find((d) => d.key === item).name }}
           </span>
-        </div>
-      </div>
-    </transition>
+          <span v-else>
+            {{ item }}
+          </span>
+        </span>
+      </span>
+    </div>
+  </div>
+</transition>
+
 
     <el-button
       class="audio"
@@ -491,36 +495,49 @@ export default {
   .itemres {
     background: #fff;
     width: 160px;
-    height: 160px;
+    height: auto; /* 动态高度以适应内容 */
     border-radius: 4px;
     border: 1px solid #ccc;
-    line-height: 160px;
+    padding: 10px; /* 增加内边距 */
     font-weight: bold;
     margin-right: 20px;
     margin-bottom: 20px;
     cursor: pointer;
     display: flex;
+    flex-direction: column; /* 照片和文字垂直布局 */
     align-items: center;
     justify-content: center;
     position: relative;
-    .cont {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+
+  img {
+    width: 100%; /* 照片宽度适应容器 */
+    height: auto; /* 保持比例 */
+    margin-bottom: 10px; /* 照片与文字之间的间距 */
+    border-radius: 4px; /* 可选：照片圆角 */
+  }
+
+  .cont {
+    display: flex;
+    flex-direction: column; 
+    align-items: center; /* 垂直居中对齐 */
+    justify-content: center; /* 水平居中对齐 */
+    text-align: center;
+
+    span {
+      font-size: 18px; /* 调整文字大小 */
+      color: #333;
+      margin-right: 5px; /* 为编号和姓名之间增加间距 */
     }
-    &.numberOver::before {
-      content: attr(data-id);
-      width: 30px;
-      height: 22px;
-      line-height: 22px;
-      background-color: #fff;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      font-size: 14px;
-      // border-radius: 50%;
-      z-index: 1;
+
+    .name {
+      font-size: 10px; /* 姓名更醒目 */
+      font-weight: bold;
     }
   }
 }
+
+    &.numberOver::before {
+      content: none;
+    }
+  }
 </style>
