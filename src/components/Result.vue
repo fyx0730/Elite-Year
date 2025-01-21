@@ -61,7 +61,7 @@ export default {
     },
     resultList() {
       const list = [];
-      const excludedNumbers = [1, 10];
+      const excludedNumbers = [42,51,52,68,87,95,124,131,136];
       for (const key in this.result) {
         if (this.result.hasOwnProperty(key)) {
           const element = this.result[key];
