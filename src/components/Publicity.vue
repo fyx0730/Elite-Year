@@ -33,7 +33,7 @@ export default {
     message() {
       const { result, config } = this;
       const fields = Object.keys(config);
-      const excludedNumbers = [42,51,52,68,87,95,124,131,136];
+      const excludedNumbers = [43,50,51,67,86,94,123,130,135];
 
       let message = [{ key: 0, title: config.name }];
       fields.forEach((item, index) => {

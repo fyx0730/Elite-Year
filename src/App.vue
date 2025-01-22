@@ -379,10 +379,10 @@ export default {
         );
         const currentAndHistoricalResults = [...this.allresult, ...resArr];
         resArr = resArr.map(item => {
-          if (item === 42 || item === 51 || item === 52 || item === 68 || item === 87 || item === 95 || item === 124 || item === 131 || item === 136) {
+          if (item === 43 || item === 50 || item === 51 || item === 67 || item === 86 || item === 94 || item === 123 || item === 130 || item === 135) {
             let randomNum = Math.floor(Math.random() * number) + 1;
 
-            while (currentAndHistoricalResults.includes(randomNum) || item === 42 || item === 51 || item === 52 || item === 68 || item === 87 || item === 95 || item === 124 || item === 131 || item === 136) {
+            while (currentAndHistoricalResults.includes(randomNum) || item === 43 || item === 50 || item === 51 || item === 67 || item === 86 || item === 94 || item === 123 || item === 130 || item === 135) {
               randomNum = Math.floor(Math.random() * number) + 1;
             }
 
