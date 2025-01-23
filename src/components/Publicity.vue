@@ -33,20 +33,16 @@ export default {
     message() {
       const { result, config } = this;
       const fields = Object.keys(config);
-      const excludedNumbers = [43,50,51,67,86,94,123,130,135];
 
       let message = [{ key: 0, title: config.name }];
       fields.forEach((item, index) => {
         let label = conversionCategoryName(item);
-        let filteredResult = (result[item] && result[item].filter(
-          (number) => !excludedNumbers.includes(number)
-        )) || [];
         if (result[item] && config[item] > 0) {
           message.push({
             key: index + 1,
             title: `${label}抽奖结果:`,
             value: `${
-              filteredResult.length > 0 ? filteredResult.join('、') : '暂未抽取'
+              result[item].length > 0 ? result[item].join('、') : '暂未抽取'
             }`
           });
         }

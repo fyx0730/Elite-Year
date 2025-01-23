@@ -142,8 +142,7 @@ import {
 import Importphoto from './Importphoto';
 import { database, DB_STORE_NAME } from '@/helper/db';
 
-
-export default { 
+export default {
   props: {
     running: Boolean,
     closeRes: Function
@@ -154,6 +153,7 @@ export default {
   beforeDestroy() {
     window.removeEventListener('message', this.handleIframeMessage);
   },
+
   computed: {
     config: {
       get() {
@@ -215,26 +215,17 @@ export default {
   },
   methods: {
     handleIframeMessage(event) {
-    const allowedOrigins = [
-    "https://snap.codelab.club",
-    "https://snap.aimaker.space"];  
-    if (!allowedOrigins.includes(event.origin)) {
-      return;
+
+      const allowedOrigins = [
+        "https://snap.codelab.club",
+        "https://snap.aimaker.space"];  
+        if (!allowedOrigins.includes(event.origin)) {
+          return;
     }
-    if (event.data === "open") {
-      this.showSetwat = true;
-    } else if (event.data === "close") {
-      this.showSetwat = false;
-    }
-      else if (event.data === "startLottery") {
-      this.running = true;  
-      this.$emit(
-      'toggle',Object.assign({}, this.form, { remain: this.remain })
-      );
-    }
-      else if (event.data === "stopLottery") {
-        this.running = false;
-        this.$emit('toggle')
+        if (event.data === "open") {
+          this.startHandler();    
+     } else if (event.data === "startLottery") {
+          this.startLottery();
     }
     },
     resetConfig() {
@@ -310,15 +301,18 @@ export default {
           return this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
         }
       }
-      window.parent.postMessage("saved", "*")
       this.showSetwat = false;
     },
     startHandler() {
       this.$emit('toggle');
       if (!this.running) {
         this.showSetwat = true;
-        window.parent.postMessage("unsaved", "*")
       }
+    },
+    startLottery() {
+      this.$emit(
+      'toggle',Object.assign({}, this.form, { remain: this.remain })
+      ); 
     },
     transformList() {
       const { listStr } = this;

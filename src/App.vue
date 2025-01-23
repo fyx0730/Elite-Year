@@ -25,7 +25,7 @@
         </li>
       </ul>
     </div>
-    <transition name="bounce">
+  <transition name="bounce">
   <div id="resbox" v-show="showRes">
     <p @click="showRes = false">{{ categoryName }}抽奖结果：</p>
     <div class="container">
@@ -69,7 +69,6 @@
     </div>
   </div>
 </transition>
-
 
     <el-button
       class="audio"
@@ -171,10 +170,9 @@ export default {
         if (this.result.hasOwnProperty(key)) {
           const element = this.result[key];
           allresult = allresult.concat(element);
-       }
+        }
       }
-      // 使用 Set 去重
-      return Array.from(new Set(allresult));
+      return allresult;
     },
     datas() {
       const { number } = this.config;
@@ -255,11 +253,9 @@ export default {
       this.getPhoto();
     }, 1000);
     window.addEventListener('resize', this.reportWindowSize);
-    window.addEventListener("message", this.handleIframeMessage);
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.reportWindowSize);
-    window.removeEventListener("message", this.handleIframeMessage);
   },
   methods: {
     reportWindowSize() {
@@ -271,27 +267,9 @@ export default {
     },
     playHandler() {
       this.audioPlaying = true;
-      this.$el.querySelector("#audiobg").play();
     },
     pauseHandler() {
       this.audioPlaying = false;
-      this.$el.querySelector("#audiobg").pause();
-    },
-    handleIframeMessage(event) {
-    const allowedOrigins = [
-    "https://snap.codelab.club",
-    "https://snap.aimaker.space"];  
-    if (!allowedOrigins.includes(event.origin)) {
-      return;
-    }
-    if (event.data === "play") {
-      this.playHandler();
-    } else if (event.data === "pause") {
-      this.pauseHandler();
-    }
-      else if (event.data === "closeShowRes") {
-      this.closeRes();
-    }
     },
     playAudio(type) {
       if (type) {
@@ -377,23 +355,23 @@ export default {
           allin ? [] : this.allresult,
           num
         );
-        const currentAndHistoricalResults = [...this.allresult, ...resArr];
-        resArr = resArr.map(item => {
-          if (item === 43 || item === 50 || item === 51 || item === 67 || item === 86 || item === 94 || item === 123 || item === 130 || item === 135) {
-            let randomNum = Math.floor(Math.random() * number) + 1;
 
-            while (currentAndHistoricalResults.includes(randomNum) || item === 43 || item === 50 || item === 51 || item === 67 || item === 86 || item === 94 || item === 123 || item === 130 || item === 135) {
-              randomNum = Math.floor(Math.random() * number) + 1;
-            }
+        // 添加过滤逻辑：排除不中奖号码
+        const excludedNumbers = [42, 49, 50, 85, 93, 122, 129, 134];
+        resArr = resArr.filter(item => !excludedNumbers.includes(item));
 
-            return randomNum;  
-         }
-         return item;
-      });
-        this.allresult = [...this.allresult, ...resArr];
-        const uniqueResArr = Array.from(new Set(resArr));
+        // 自动补充未中奖号码
+        const alreadyChosen = new Set([...this.allresult, ...resArr]);
+        const remainingNumbers = Array.from(
+          { length: number }, // 假设总人数为 number
+          (_, i) => i + 1
+        ).filter(n => !alreadyChosen.has(n) && !excludedNumbers.includes(n));
 
-        this.resArr = uniqueResArr;
+        while (resArr.length < num && remainingNumbers.length > 0) {
+          resArr.push(remainingNumbers.shift());
+        }
+
+        this.resArr = resArr;
 
         this.category = category;
         if (!this.result[category]) {
@@ -462,7 +440,7 @@ export default {
     right: 0;
     bottom: 0;
     color: #ccc;
-    font-size: 20px;
+    font-size: 12px;
   }
   .bounce-enter-active {
     animation: bounce-in 1.5s;
@@ -530,14 +508,25 @@ export default {
     }
 
     .name {
-      font-size: 10px; /* 姓名更醒目 */
+      font-size: 15px; /* 姓名更醒目 */
       font-weight: bold;
     }
   }
-}
 
+  
     &.numberOver::before {
-      content: none;
+      content: attr(data-id);
+      width: 30px;
+      height: 22px;
+      line-height: 22px;
+      background-color: #fff;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      font-size: 14px;
+      // border-radius: 50%;
+      z-index: 1;
     }
   }
+}
 </style>
