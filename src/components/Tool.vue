@@ -302,6 +302,7 @@ export default {
         }
       }
       this.showSetwat = false;
+      window.parent.postMessage("saved", "*");
     },
     startHandler() {
       this.$emit('toggle');
