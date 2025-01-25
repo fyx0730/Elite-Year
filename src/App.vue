@@ -440,7 +440,7 @@ export default {
     right: 0;
     bottom: 0;
     color: #ccc;
-    font-size: 12px;
+    font-size: 24px;
   }
   .bounce-enter-active {
     animation: bounce-in 1.5s;
