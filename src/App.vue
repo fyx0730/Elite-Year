@@ -94,7 +94,7 @@
     <Result :visible.sync="showResult"></Result>
 
     <span class="copy-right">
-      英荔 AI，放飞孩子们的想象力和创造力
+      英荔 AI，放飞孩子的想象力和创造力
     </span>
 
     <audio
