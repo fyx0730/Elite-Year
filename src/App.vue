@@ -19,56 +19,54 @@
               color: '#fff',
             }"
           >
-            {{ item.name ? item.name : item.key }}
+            {{ item.displayText }}
             <img v-if="item.photo" :src="item.photo" :width="50" :height="50" />
           </a>
         </li>
       </ul>
     </div>
-  <transition name="bounce">
-  <div id="resbox" v-show="showRes">
-    <p @click="showRes = false">{{ categoryName }}抽奖结果：</p>
-    <div class="container">
-      <span
-        v-for="item in resArr"
-        :key="item"
-        class="itemres"
-        :style="resCardStyle"
-        :data-id="item"
-        @click="showRes = false"
-      >
-        <!-- 如果有照片 -->
-        <div class="cont" v-if="photos.find((d) => d.id === item)">
-          <img
-            :src="photos.find((d) => d.id === item).value"
-            alt="photo"
-            :width="160"
-            :height="160"
-          />
-          <span>{{ item }}</span> <!-- 显示编号 -->
-          <span v-if="list.find((d) => d.key === item)">
-            {{ list.find((d) => d.key === item).name }}
-          </span> <!-- 显示姓名 -->
-        </div>
-
-        <!-- 如果没有照片 -->
-        <span class="cont" v-else>
-          <span
-            v-if="!!list.find((d) => d.key === item)"
-            :style="{
-              fontSize: '40px',
-            }"
-          >
-            {{ list.find((d) => d.key === item).name }}
-          </span>
-          <span v-else>
-            {{ item }}
-          </span>
+    <transition name="bounce">
+      <div id="resbox" v-show="showRes">
+  <p @click="showRes = false">{{ categoryName }}抽奖结果：</p>
+  <div class="container">
+    <span
+      v-for="item in resArr"
+      :key="item"
+      class="itemres"
+      :style="resCardStyle"
+      :data-id="item"
+      @click="showRes = false"
+      :class="{
+        numberOver:
+          !!photos.find((d) => d.id === item) ||
+          !!list.find((d) => d.key === item),
+      }"
+    >
+      <span class="cont" v-if="!photos.find((d) => d.id === item)">
+        <span
+          v-if="!!list.find((d) => d.key === item)"
+          :style="{
+            fontSize: '30px',
+          }"
+        >
+          {{ list.find((d) => d.key === item).name }}
+        </span>
+        <span v-else>
+          <!-- 使用 padStart 将数字格式化为三位数 -->
+          {{ String(item).padStart(3, '0') }}
         </span>
       </span>
-    </div>
+      <img
+        v-if="photos.find((d) => d.id === item)"
+        :src="photos.find((d) => d.id === item).value"
+        alt="photo"
+        :width="160"
+        :height="160"
+      />
+    </span>
   </div>
-</transition>
+</div>
+    </transition>
 
     <el-button
       class="audio"
@@ -96,7 +94,7 @@
     <Result :visible.sync="showResult"></Result>
 
     <span class="copy-right">
-      英荔 AI 不止编程
+      英荔 AI，放飞孩子的想象力和创造力
     </span>
 
     <audio
@@ -140,11 +138,11 @@ export default {
       const style = { fontSize: '30px' };
       const { number } = this.config;
       if (number < 100) {
-        style.fontSize = '100px';
-      } else if (number < 1000) {
         style.fontSize = '80px';
-      } else if (number < 10000) {
+      } else if (number < 1000) {
         style.fontSize = '60px';
+      } else if (number < 10000) {
+        style.fontSize = '40px';
       }
       return style;
     },
@@ -186,6 +184,7 @@ export default {
           key: item * (number > 1500 ? 3 : 1),
           name: listData ? listData.name : '',
           photo: photo ? photo.value : '',
+          displayText: this.formatDisplayNumber(item * (number > 1500 ? 3 : 1)),
         };
       });
       return randomShowDatas;
@@ -264,6 +263,16 @@ export default {
         AppCanvas.parentElement.removeChild(AppCanvas);
       }
       this.startTagCanvas();
+    },
+
+    formatDisplayNumber(number) {
+      if (number < 10) {
+        return `00${number}`; // 1 → 001
+      } else if (number < 100) {
+        return `0${number}`; // 10 → 010
+      } else {
+        return `${number}`; // 100 → 100
+      }
     },
     playHandler() {
       this.audioPlaying = true;
@@ -350,27 +359,11 @@ export default {
         } else if (mode === 99) {
           num = qty;
         }
-        let resArr = luckydrawHandler(
+        const resArr = luckydrawHandler(
           number,
           allin ? [] : this.allresult,
           num
         );
-
-        // 添加过滤逻辑：排除不中奖号码
-        const excludedNumbers = [42, 49, 50, 85, 93, 122, 129, 134];
-        resArr = resArr.filter(item => !excludedNumbers.includes(item));
-
-        // 自动补充未中奖号码
-        const alreadyChosen = new Set([...this.allresult, ...resArr]);
-        const remainingNumbers = Array.from(
-          { length: number }, // 假设总人数为 number
-          (_, i) => i + 1
-        ).filter(n => !alreadyChosen.has(n) && !excludedNumbers.includes(n));
-
-        while (resArr.length < num && remainingNumbers.length > 0) {
-          resArr.push(remainingNumbers.shift());
-        }
-
         this.resArr = resArr;
 
         this.category = category;
@@ -440,7 +433,7 @@ export default {
     right: 0;
     bottom: 0;
     color: #ccc;
-    font-size: 24px;
+    font-size: 12px;
   }
   .bounce-enter-active {
     animation: bounce-in 1.5s;
@@ -473,47 +466,23 @@ export default {
   .itemres {
     background: #fff;
     width: 160px;
-    height: auto; /* 动态高度以适应内容 */
+    height: 160px;
     border-radius: 4px;
     border: 1px solid #ccc;
-    padding: 10px; /* 增加内边距 */
+    line-height: 160px;
     font-weight: bold;
     margin-right: 20px;
     margin-bottom: 20px;
     cursor: pointer;
     display: flex;
-    flex-direction: column; /* 照片和文字垂直布局 */
     align-items: center;
     justify-content: center;
     position: relative;
-
-  img {
-    width: 100%; /* 照片宽度适应容器 */
-    height: auto; /* 保持比例 */
-    margin-bottom: 10px; /* 照片与文字之间的间距 */
-    border-radius: 4px; /* 可选：照片圆角 */
-  }
-
-  .cont {
-    display: flex;
-    flex-direction: column; 
-    align-items: center; /* 垂直居中对齐 */
-    justify-content: center; /* 水平居中对齐 */
-    text-align: center;
-
-    span {
-      font-size: 18px; /* 调整文字大小 */
-      color: #333;
-      margin-right: 5px; /* 为编号和姓名之间增加间距 */
+    .cont {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-
-    .name {
-      font-size: 15px; /* 姓名更醒目 */
-      font-weight: bold;
-    }
-  }
-
-  
     &.numberOver::before {
       content: attr(data-id);
       width: 30px;

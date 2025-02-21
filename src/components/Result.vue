@@ -37,12 +37,13 @@
           :key="j"
           :data-res="data"
         >
-          {{ data }}
+          {{ formatNumber(data) }}
         </span>
       </span>
     </div>
   </el-dialog>
 </template>
+
 <script>
 import { conversionCategoryName, getDomData } from '@/helper/index';
 export default {
@@ -76,6 +77,9 @@ export default {
     }
   },
   methods: {
+    formatNumber(number) {
+      return String(number).padStart(3, '0'); // 格式化为三位数
+    },
     deleteRes(event, row) {
       const Index = getDomData(event.target, 'res');
       if (!Index) {
@@ -109,6 +113,7 @@ export default {
   }
 };
 </script>
+
 <style lang="scss">
 .c-Result {
   .el-dialog__body {

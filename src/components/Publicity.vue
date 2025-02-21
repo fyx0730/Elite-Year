@@ -38,11 +38,14 @@ export default {
       fields.forEach((item, index) => {
         let label = conversionCategoryName(item);
         if (result[item] && config[item] > 0) {
+          const formattedValues = result[item].map(value => {
+            return String(value).padStart(3, '0');
+          });
           message.push({
             key: index + 1,
             title: `${label}抽奖结果:`,
             value: `${
-              result[item].length > 0 ? result[item].join('、') : '暂未抽取'
+              formattedValues.length > 0 ? formattedValues.join('、') : '暂未抽取'
             }`
           });
         }
