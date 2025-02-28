@@ -485,16 +485,17 @@ export default {
     }
     &.numberOver::before {
       content: attr(data-id);
-      width: 30px;
-      height: 22px;
-      line-height: 22px;
+      width: 90px; /* 增加方框宽度 */
+      height: 40px; /* 增加方框高度 */
+      line-height: 40px; /* 调整行高 */
       background-color: #fff;
       position: absolute;
       bottom: 0;
       left: 0;
-      font-size: 14px;
-      // border-radius: 50%;
+      font-size: 35px; /* 增加字体大小 */
       z-index: 1;
+      text-align: center; /* 文字居中 */
+      border-radius: 0px; /* 可选：增加圆角 */
     }
   }
 }
