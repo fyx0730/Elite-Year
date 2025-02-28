@@ -34,7 +34,7 @@
       :key="item"
       class="itemres"
       :style="resCardStyle"
-      :data-id="item"
+      :data-id="formatDisplayNumber(item)"
       @click="showRes = false"
       :class="{
         numberOver:
