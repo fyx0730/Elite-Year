@@ -159,7 +159,11 @@ export default {
     running: Boolean,
     closeRes: Function
   },
+  mounted() {
+    window.addEventListener('keydown', this.handleKeydown);
+  },
   beforeDestroy() {
+    window.removeEventListener('keydown', this.handleKeydown);
     this.disconnectMicroblocks();
   },
 
@@ -222,7 +226,6 @@ export default {
       bleConnected: false,
       bleConnecting: false,
       microblocks: null,
-      blePendingStart: false,
       lotteryPrepared: false
     };
   },
@@ -230,11 +233,6 @@ export default {
     showRemoveoptions(v) {
       if (!v) {
         this.removeInfo.type = 0;
-      }
-    },
-    showSetwat(v) {
-      if (!v && this.blePendingStart && !this.lotteryPrepared) {
-        this.blePendingStart = false;
       }
     }
   },
@@ -279,6 +277,34 @@ export default {
       this.bleConnected = false;
       this.bleConnecting = false;
     },
+    handleKeydown(event) {
+      if (event.code !== 'Space' && event.key !== ' ') {
+        return;
+      }
+      const tag = (event.target && event.target.tagName) || '';
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) {
+        return;
+      }
+      if (event.target && event.target.isContentEditable) {
+        return;
+      }
+      if (
+        this.showSetwat ||
+        this.showImport ||
+        this.showImportphoto ||
+        this.showRemoveoptions
+      ) {
+        return;
+      }
+      event.preventDefault();
+      this.openLotterySettings();
+    },
+    openLotterySettings() {
+      if (this.running) {
+        return;
+      }
+      this.showSetwat = true;
+    },
     handleMicroblocksMessage(text) {
       const command = classifyLotteryCommand(text);
       if (!command) {
@@ -300,8 +326,6 @@ export default {
     },
     stopLottery() {
       if (this.running) {
-        this.lotteryPrepared = false;
-        this.blePendingStart = false;
         this.$emit('toggle');
       }
     },
@@ -309,20 +333,18 @@ export default {
       if (this.running) {
         return;
       }
-      if (this.lotteryPrepared) {
-        this.lotteryPrepared = false;
-        this.blePendingStart = false;
-        this.showSetwat = false;
-        this.startLottery();
+      this.showSetwat = false;
+      if (!this.ensureLotteryForm(false)) {
         return;
       }
-      this.blePendingStart = true;
-      this.showSetwat = true;
+      this.startLottery();
     },
-    ensureLotteryForm() {
+    ensureLotteryForm(openDialog = true) {
       if (!this.form.category) {
-        this.showSetwat = true;
-        this.$message.error('请先选择本次抽取的奖项');
+        if (openDialog) {
+          this.showSetwat = true;
+        }
+        this.$message.error('请先按空格键设置抽奖奖项和人数');
         return false;
       }
       if (this.remain <= 0) {
@@ -406,20 +428,15 @@ export default {
         return;
       }
       this.showSetwat = false;
-      if (this.blePendingStart) {
-        this.lotteryPrepared = true;
-        this.blePendingStart = false;
-        this.$message.success('已设置奖项和人数，等待设备发送 start 开始抽奖');
-        return;
-      }
-      this.lotteryPrepared = false;
-      this.startLottery();
+      this.lotteryPrepared = true;
+      this.$message.success('已设置奖项和人数，等待设备发送 start 开始抽奖');
     },
     startHandler() {
-      this.$emit('toggle');
-      if (!this.running) {
-        this.showSetwat = true;
+      if (this.running) {
+        this.stopLottery();
+        return;
       }
+      this.openLotterySettings();
     },
     startLottery() {
       this.$emit(
