@@ -3,6 +3,14 @@
     <el-button @click="startHandler" type="primary" size="mini">{{
       running ? '停止' : '开始'
     }}</el-button>
+    <el-button
+      size="mini"
+      :type="bleConnected ? 'success' : 'default'"
+      :loading="bleConnecting"
+      @click="toggleMicroblocks"
+    >
+      {{ bleButtonText }}
+    </el-button>
     <el-button size="mini" @click="showRemoveoptions = true">
       重置
     </el-button>
@@ -141,17 +149,18 @@ import {
 } from '@/helper/index';
 import Importphoto from './Importphoto';
 import { database, DB_STORE_NAME } from '@/helper/db';
+import {
+  MicroblocksClient,
+  classifyLotteryCommand
+} from '@/helper/microblocks';
 
 export default {
   props: {
     running: Boolean,
     closeRes: Function
   },
-  mounted() {
-    window.addEventListener('message', this.handleIframeMessage);
-  },
   beforeDestroy() {
-    window.removeEventListener('message', this.handleIframeMessage);
+    this.disconnectMicroblocks();
   },
 
   computed: {
@@ -187,6 +196,12 @@ export default {
         }
       }
       return options;
+    },
+    bleButtonText() {
+      if (this.bleConnecting) {
+        return '连接中';
+      }
+      return this.bleConnected ? '已连接' : 'MicroBlocks';
     }
   },
   components: { Importphoto },
@@ -203,7 +218,12 @@ export default {
         qty: 1,
         allin: false
       },
-      listStr: ''
+      listStr: '',
+      bleConnected: false,
+      bleConnecting: false,
+      microblocks: null,
+      blePendingStart: false,
+      lotteryPrepared: false
     };
   },
   watch: {
@@ -211,22 +231,122 @@ export default {
       if (!v) {
         this.removeInfo.type = 0;
       }
+    },
+    showSetwat(v) {
+      if (!v && this.blePendingStart && !this.lotteryPrepared) {
+        this.blePendingStart = false;
+      }
     }
   },
   methods: {
-    handleIframeMessage(event) {
-
-      const allowedOrigins = [
-        "https://snap.codelab.club",
-        "https://snap.aimaker.space"];  
-        if (!allowedOrigins.includes(event.origin)) {
-          return;
-    }
-        if (event.data === "open") {
-          this.startHandler();    
-     } else if (event.data === "startLottery") {
-          this.startLottery();
-    }
+    async toggleMicroblocks() {
+      if (this.bleConnected) {
+        this.disconnectMicroblocks();
+        this.$message.info('已断开 MicroBlocks');
+        return;
+      }
+      this.bleConnecting = true;
+      const client = new MicroblocksClient({
+        onMessage: text => this.handleMicroblocksMessage(text),
+        onDisconnected: () => {
+          this.bleConnected = false;
+          this.$message.warning('MicroBlocks 连接断开');
+        }
+      });
+      try {
+        await client.connect();
+        this.microblocks = client;
+        this.bleConnected = true;
+        this.$message.success('MicroBlocks 已连接');
+      } catch (error) {
+        client.disconnect();
+        this.microblocks = null;
+        this.bleConnected = false;
+        if (error && error.name === 'NotFoundError') {
+          this.$message.info('已取消连接');
+        } else {
+          this.$message.error((error && error.message) || 'MicroBlocks 连接失败');
+        }
+      } finally {
+        this.bleConnecting = false;
+      }
+    },
+    disconnectMicroblocks() {
+      if (this.microblocks) {
+        this.microblocks.disconnect();
+        this.microblocks = null;
+      }
+      this.bleConnected = false;
+      this.bleConnecting = false;
+    },
+    handleMicroblocksMessage(text) {
+      const command = classifyLotteryCommand(text);
+      if (!command) {
+        return;
+      }
+      if (command === 'stop') {
+        this.stopLottery();
+        return;
+      }
+      if (command === 'start') {
+        this.remoteStartLottery();
+        return;
+      }
+      if (this.running) {
+        this.stopLottery();
+      } else {
+        this.remoteStartLottery();
+      }
+    },
+    stopLottery() {
+      if (this.running) {
+        this.lotteryPrepared = false;
+        this.blePendingStart = false;
+        this.$emit('toggle');
+      }
+    },
+    remoteStartLottery() {
+      if (this.running) {
+        return;
+      }
+      if (this.lotteryPrepared) {
+        this.lotteryPrepared = false;
+        this.blePendingStart = false;
+        this.showSetwat = false;
+        this.startLottery();
+        return;
+      }
+      this.blePendingStart = true;
+      this.showSetwat = true;
+    },
+    ensureLotteryForm() {
+      if (!this.form.category) {
+        this.showSetwat = true;
+        this.$message.error('请先选择本次抽取的奖项');
+        return false;
+      }
+      if (this.remain <= 0) {
+        this.$message.error('该奖项剩余人数不足');
+        return false;
+      }
+      if (this.form.mode === 99) {
+        if (this.form.qty <= 0) {
+          this.$message.error('必须输入本次抽取人数');
+          return false;
+        }
+        if (this.form.qty > this.remain) {
+          this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
+          return false;
+        }
+      }
+      if (
+        (this.form.mode === 1 || this.form.mode === 5) &&
+        this.form.mode > this.remain
+      ) {
+        this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
+        return false;
+      }
+      return true;
     },
     resetConfig() {
       const type = this.removeInfo.type;
@@ -282,27 +402,18 @@ export default {
         });
     },
     onSubmit() {
-      if (!this.form.category) {
-        return this.$message.error('请选择本次抽取的奖项');
-      }
-      if (this.remain <= 0) {
-        return this.$message.error('该奖项剩余人数不足');
-      }
-      if (this.form.mode === 99) {
-        if (this.form.qty <= 0) {
-          return this.$message.error('必须输入本次抽取人数');
-        }
-        if (this.form.qty > this.remain) {
-          return this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
-        }
-      }
-      if (this.form.mode === 1 || this.form.mode === 5) {
-        if (this.form.mode > this.remain) {
-          return this.$message.error('本次抽奖人数已超过本奖项的剩余人数');
-        }
+      if (!this.ensureLotteryForm()) {
+        return;
       }
       this.showSetwat = false;
-      window.parent.postMessage("saved", "*");
+      if (this.blePendingStart) {
+        this.lotteryPrepared = true;
+        this.blePendingStart = false;
+        this.$message.success('已设置奖项和人数，等待设备发送 start 开始抽奖');
+        return;
+      }
+      this.lotteryPrepared = false;
+      this.startLottery();
     },
     startHandler() {
       this.$emit('toggle');
@@ -353,7 +464,7 @@ export default {
 <style lang="scss">
 #tool {
   position: fixed;
-  width: 60px;
+  width: 92px;
   top: 50%;
   right: 20px;
   transform: translateY(-50%);
@@ -362,6 +473,12 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  .el-button {
+    width: 88px;
+    padding: 7px 4px;
+    white-space: normal;
+    line-height: 1.2;
+  }
   .el-button + .el-button {
     margin-top: 20px;
     margin-left: 0px;
