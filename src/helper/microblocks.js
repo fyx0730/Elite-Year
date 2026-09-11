@@ -58,6 +58,7 @@ export class MicroblocksClient {
     this.onDisconnected = onDisconnected;
     this.device = null;
     this.server = null;
+    this.rxCharacteristic = null;
     this.txCharacteristic = null;
     this.messageBuffer = new Uint8Array();
     this.handleNotifications = this.handleNotifications.bind(this);
@@ -85,11 +86,12 @@ export class MicroblocksClient {
     const service = await this.server.getPrimaryService(
       MICROBLOCKS_SERVICE_UUID
     );
-    const [, txCharacteristic] = await Promise.all([
+    const [rxCharacteristic, txCharacteristic] = await Promise.all([
       service.getCharacteristic(MICROBLOCKS_RX_CHAR_UUID),
       service.getCharacteristic(MICROBLOCKS_TX_CHAR_UUID)
     ]);
 
+    this.rxCharacteristic = rxCharacteristic;
     this.txCharacteristic = txCharacteristic;
     this.messageBuffer = new Uint8Array();
     await txCharacteristic.startNotifications();
@@ -100,6 +102,7 @@ export class MicroblocksClient {
   }
 
   disconnect() {
+    this.rxCharacteristic = null;
     if (this.txCharacteristic) {
       this.txCharacteristic.removeEventListener(
         'characteristicvaluechanged',
@@ -122,6 +125,7 @@ export class MicroblocksClient {
   }
 
   handleDisconnected() {
+    this.rxCharacteristic = null;
     this.txCharacteristic = null;
     this.server = null;
     if (this.onDisconnected) {
@@ -167,6 +171,28 @@ export class MicroblocksClient {
     }
     this.messageBuffer = buf.slice(i);
     return result;
+  }
+
+  encodeMessage(text) {
+    const data = new TextEncoder().encode(String(text));
+    const length = data.length + 1;
+    const bytes = new Uint8Array(6 + data.length);
+    bytes.set([251, 27, 0, length % 256, Math.floor(length / 256)], 0);
+    bytes.set(data, 5);
+    bytes[bytes.length - 1] = 254;
+    return bytes;
+  }
+
+  async send(text) {
+    if (!this.connected || !this.rxCharacteristic) {
+      throw new Error('MicroBlocks 未连接');
+    }
+    const bytes = this.encodeMessage(text);
+    if (this.rxCharacteristic.properties.writeWithoutResponse) {
+      await this.rxCharacteristic.writeValueWithoutResponse(bytes);
+      return;
+    }
+    await this.rxCharacteristic.writeValue(bytes);
   }
 
   handleNotifications(event) {

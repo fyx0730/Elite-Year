@@ -423,12 +423,23 @@ export default {
           });
         });
     },
+    sendMicroblocksMessage(text) {
+      if (!this.microblocks || !this.bleConnected) {
+        return;
+      }
+      this.microblocks.send(text).catch(error => {
+        this.$message.error(
+          '蓝牙发送失败：' + ((error && error.message) || text)
+        );
+      });
+    },
     onSubmit() {
       if (!this.ensureLotteryForm()) {
         return;
       }
       this.showSetwat = false;
       this.lotteryPrepared = true;
+      this.sendMicroblocksMessage('init');
       this.$message.success('已设置奖项和人数，等待设备发送 start 开始抽奖');
     },
     startHandler() {
@@ -440,8 +451,10 @@ export default {
     },
     startLottery() {
       this.$emit(
-      'toggle',Object.assign({}, this.form, { remain: this.remain })
-      ); 
+        'toggle',
+        Object.assign({}, this.form, { remain: this.remain })
+      );
+      this.sendMicroblocksMessage('running');
     },
     transformList() {
       const { listStr } = this;
